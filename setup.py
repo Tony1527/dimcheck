@@ -12,6 +12,7 @@ setuptools.setup(
     # url="https://github.com/wupeiqi/fucker",  # 模块github地址
     packages=setuptools.find_packages(exclude=".history"),  # 自动找到项目中导入的模块
     include_package_data=True,
+    exclude_package_data={"":[".gitignore"]},
     # 模块相关的元数据
     classifiers=[
         "Programming Language :: Python :: 3",
