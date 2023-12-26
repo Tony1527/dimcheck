@@ -1,0 +1,7 @@
+{
+    "si_instance": true,
+    "custom_instance": false,
+    "custom_quant_def_file": "custom.json",
+    "is_save": false,
+    "output": "./"
+}

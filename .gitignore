@@ -162,3 +162,8 @@ cython_debug/
 .history
 
 .DS_Store
+
+.vscode/
+
+unittest/reports/
+unittest/output/

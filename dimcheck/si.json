@@ -1,0 +1,316 @@
+{
+    "quantities":[
+        {
+            "quantity":"[m]",
+            "rhs":"kg",
+            "discription":"mass"
+        },
+        {
+            "quantity":"[t]",
+            "rhs":"s",
+            "discription":"time"
+        },
+        {
+            "quantity":"[l]",
+            "rhs":"m",
+            "alias":["[r]"],
+            "discription":"length"
+        },
+        {
+            "quantity":"[I]",
+            "rhs":"A",
+            "discription":"current"
+        },
+        {
+            "quantity":"[T]",
+            "rhs":"K",
+            "discription":"temperature"
+        },
+        {
+            "quantity":"[mole]",
+            "rhs":"mol",
+            "discription":"amount of substance"
+        },
+        {
+            "quantity":"[I_v]",
+            "rhs":"cd",
+            "discription":"luminous intensity"
+        },
+        {
+            "quantity":"[rho_m]",
+            "rhs":"[m]/[l]**3",
+            "discription":"density of mass"
+        },
+        {
+            "quantity":"[v]",
+            "rhs":"[l]/[t]",
+            "discription":"velocity"
+        },
+        {
+            "quantity":"[a]",
+            "rhs":"[v]/[t]",
+            "discription":"acceleration"
+        },
+        {
+            "quantity":"[g]",
+            "rhs":"[a]",
+            "discription":"acceleration of gravity"
+        },
+        {
+            "quantity":"[F]",
+            "rhs":"[m]*[a]",
+            "discription":"force"
+        },
+        {
+            "quantity":"[Q]",
+            "rhs":"[I]*[t]",
+            "alias":["[q]"],
+            "discription":"charge"
+        },
+        {
+            "quantity":"[e]",
+            "rhs":"[Q]",
+            "discription":"unit charge"
+        },
+        {
+            "quantity":"[E]",
+            "rhs":"[F]*[l]",
+            "alias":["[energy]"],
+            "discription":"energy"
+        },
+        {
+            "quantity":"[f]",
+            "rhs":"1/[t]",
+            "alias":["[nu]"],
+            "discription":"frequency"
+        },
+        {
+            "quantity":"[w]",
+            "rhs":"[f]",
+            "alias":["[omega]","[omg]"],
+            "discription":"angular frequency"
+        },
+        {
+            "quantity":"[h]",
+            "rhs":"[E]/[nu]",
+            "discription":"Planck's constant"
+        },
+        {
+            "quantity":"[hbar]",
+            "rhs":"[h]",
+            "discription":"normalized Planck's constant"
+        },
+        {
+            "quantity":"[k]",
+            "rhs":"1/[l]",
+            "discription":"wave number"
+        },
+        {
+            "quantity":"[epsilon_0]",
+            "rhs":"[Q]**2/([F]*[l]**2)",
+            "alias":["[eps_0]"],
+            "discription":"vacuum dielectric constant"
+        },
+        {
+            "quantity":"[epsilon]",
+            "rhs":"[eps_0]",
+            "alias":["[eps]"],
+            "discription":"dielectric constant"
+        },
+        {
+            "quantity":"[c]",
+            "rhs":"[v]",
+            "alias":["[c_0]"],
+            "discription":"speed of light"
+        },
+        {
+            "quantity":"[mu_0]",
+            "rhs":"1/([c]**2*[eps_0])",
+            "alias":["[u_0]"],
+            "discription":"vacuum permeability"
+        },
+        {
+            "quantity":"[V]",
+            "rhs":"[E]/[Q]",
+            "discription":"voltage"
+        },
+        {
+            "quantity":"[R]",
+            "rhs":"[V]/[I]",
+            "discription":"resistance"
+        },
+        {
+            "quantity":"[resistivity]",
+            "rhs":"[R]*[l]",
+            "alias":["[rho_R]","[rho_rss]"],
+            "discription":"resistivity"
+        },
+        {
+            "quantity":"[k_B]",
+            "rhs":"[E]/[T]",
+            "discription":"Boltzman constant"
+        },
+        {
+            "quantity":"[p]",
+            "rhs":"[m]*[v]",
+            "discription":"momentum"
+        },
+        {
+            "quantity":"[n]",
+            "rhs":"1/[l]**3",
+            "discription":"3D density"
+        },
+        {
+            "quantity":"[conductance]",
+            "rhs":"1/[R]",
+            "alias":["[G_cond_3D]","[G_cond]"],
+            "discription":"conductance 3D"
+        },
+        {
+            "quantity":"[mobility]",
+            "rhs":"[Q]*[t]/[m]",
+            "alias":["[mu_mob]","[u_mob]"],
+            "discription":"3D mobility"
+        },
+        {
+            "quantity":"[C]",
+            "rhs":"[Q]/[V]",
+            "discription":"capacitance"
+        },
+        {
+            "quantity":"[L]",
+            "rhs":"[phi]/[I]",
+            "discription":"Inductance"
+        },
+        {
+            "quantity":"[sigma]",
+            "rhs":"[J]/[EE]",
+            "alias":["[sigma_3D]","[sgm]","[sgm_3D]","[conductivity]","[conductivity_3D]","[cond]","[cond_3D]"],
+            "discription":"conductivity 3D"
+        },
+        {
+            "quantity":"[sigma_2D]",
+            "rhs":"[sigma_3D]*[l]",
+            "alias":["[sgm_2D]","[conductivity_2D]","[cond_2D]"],
+            "discription":"conductivity 2D"
+        },
+        {
+            "quantity":"[rho]",
+            "rhs":"[Q]*[n]",
+            "alias":["[rho_Q]","[rho_e]","[rho_q]"],
+            "discription":"charge density"
+        },
+        {
+            "quantity":"[EE]",
+            "rhs":"[F]/[Q]",
+            "alias":["[EF]","[electric_field]","[E_q]","[E_vec]"],
+            "discription":"electric field intensity, E field"
+        },
+        {
+            "quantity":"[potential_E]",
+            "rhs":"[E]*[l]",
+            "alias":["[phi_E]"],
+            "discription":"electric potential"
+        },
+        {
+            "quantity":"[B]",
+            "rhs":"[F]/([Q]*[v])",
+            "alias":["[BF]","[BB]","[magnetic_field]"],
+            "discription":"magnetic flux density, magnetic induction, B field"
+        },
+        {
+            "quantity":"[nabla]",
+            "rhs":"1/[l]",
+            "alias":["[nbl]"],
+            "discription":"nabla operator"
+        },
+        {
+            "quantity":"[S]",
+            "rhs":"[l]**2",
+            "discription":"area"
+        },
+        {
+            "quantity":"[J]",
+            "rhs":"[I]/[S]",
+            "alias":["[j]"],
+            "discription":"current density"
+        },
+        {
+            "quantity":"[P]",
+            "rhs":"[E]/[t]",
+            "alias":["[P_pow]"],
+            "discription":"power"
+        },
+        {
+            "quantity":"[D]",
+            "rhs":"[eps_0]*[EE]",
+            "alias":["[D_vec]","[diplacement_field]"],
+            "discription":"displacement field"
+        },
+        {
+            "quantity":"[H]",
+            "rhs":"[B]/[mu_0]",
+            "discription":"magnetic field intensity"
+        },
+        {
+            "quantity":"[M]",
+            "rhs":"[H]",
+            "alias":["[M_mag]"],
+            "discription":"magnetization"
+        },
+        {
+            "quantity":"[pressure]",
+            "rhs":"[F]/[S]",
+            "alias":["[P_prs]"],
+            "discription":"pressure"
+        },
+        {
+            "quantity":"[G]",
+            "rhs":"[F]*[l]**2/[m]**2",
+            "alias":["[G_g]"],
+            "discription":"gravitational constant"
+        },
+        {
+            "quantity":"[N_A]",
+            "rhs":"1/mol",
+            "discription":"Avogadro constant"
+        },
+        {
+            "quantity":"[phi_0]",
+            "rhs":"[h]/[e]",
+            "discription":"magnetic flux quantum"
+        },
+        {
+            "quantity":"[phi]",
+            "rhs":"[phi_0]",
+            "discription":"magnetic flux"
+        },
+        {
+            "quantity":"[mu_B]",
+            "rhs":"[e]*[hbar]/[m]",
+            "alias":["[u_B]"],
+            "discription":"Bohr magneton"
+        },
+        {
+            "quantity":"[R_K]",
+            "rhs":"[h]/[e]**2",
+            "discription":"von Klitzing constant"
+        },
+        {
+            "quantity":"[V_l]",
+            "rhs":"[l**3]",
+            "discription":"volume"
+        },
+        {
+            "quantity":"[D_diff]",
+            "rhs":"[S/t]",
+            "discription":"diffusion constant"
+        },
+        {
+            "quantity":"[alpha]",
+            "rhs":"1",
+            "alias":["[alp]"],
+            "discription":"fine structure constant"
+        }
+    ]
+}

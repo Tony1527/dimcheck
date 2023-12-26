@@ -52,6 +52,11 @@
             "discription":"acceleration"
         },
         {
+            "quantity":"[g]",
+            "rhs":"[a]",
+            "discription":"acceleration of gravity"
+        },
+        {
             "quantity":"[F]",
             "rhs":"[m]*[a]",
             "discription":"force"
@@ -294,6 +299,12 @@
             "quantity":"[V_l]",
             "rhs":"[l**3]",
             "discription":"volume"
+        },
+        {
+            "quantity":"[kappa]",
+            "rhs":"[G*m]",
+            "discription":"Kepler constant"
         }
+
     ]
 }
