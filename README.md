@@ -23,7 +23,7 @@ You can try the package as follows,
 # Import the package, the package requires some time to initialize the global instance "si". You can make the process faster by serialization in the later section.
 >>> from dimcheck import si
 Starting to parse the quantity definition file: 
-/to/your/pip/lib/path/dimcheck/dimcheck/si.json
+/to/your/pip/lib/path/packages/dimcheck/si.json
 Successfully parsed!
 
 # Get the dimension of quantity [E] where square bracket represents this is a quantity rather than basic unit like kg, m, etc. in the si unit system.
@@ -136,10 +136,10 @@ In `dimcheck`, you can define your own quantities and symbols by simply manipula
 ```python
 >>> from dimcheck import si
 Starting to parse the quantity definition file: 
-/to/your/pip/lib/path/dimcheck/dimcheck/si.json
+/to/your/pip/lib/path/packages/dimcheck/si.json
 Successfully parsed!
 >>> si.setting_file
-'/to/your/pip/lib/path/dimcheck/dimcheck/setting.json'
+'/to/your/pip/lib/path/packages/dimcheck/setting.json'
 ```
 
 2. Copy the following setting to the `setting.json`. The `is_save` field is used to serialize the object.
@@ -153,7 +153,7 @@ Successfully parsed!
 }
 ```
 
-3. Rename the file `'/to/your/pip/lib/path/dimcheck/dimcheck/custom.json'` to `'/to/your/pip/lib/path/dimcheck/dimcheck/my_definition.json'`
+3. Rename the file `'/to/your/pip/lib/path/packages/dimcheck/custom.json'` to `'/to/your/pip/lib/path/packages/dimcheck/my_definition.json'`
 
 4. Add, delete or change the definition of symbols in the file. You need to be careful since the quantities should always be wrapped with a pair of square bracket `[]`. In the following example, the quantity `[epsilon_0]` is defined by the rhs `[Q]**2/([F]*[l]**2)`. Meanwhile, you can also give multiple aliases to the same quantity. Discription can be used to indicate the meaning of the quantity.
 ```json
@@ -170,7 +170,7 @@ Successfully parsed!
 # Import custom quantity definition. Here "cs" means custom
 >>> from dimcheck import cs
 Starting to parse the quantity definition file: 
-/to/your/pip/lib/path/dimcheck/dimcheck/custom.json
+/to/your/pip/lib/path/packages/dimcheck/custom.json
 Successfully parsed!
 
 # Test your definition.
@@ -190,11 +190,11 @@ True
 
 # The position of the file of quantity definition
 >>> si.quant_def_file
-'/to/your/pip/lib/path/dimcheck/dimcheck/si.json'
+'/to/your/pip/lib/path/packages/dimcheck/si.json'
 
 # The position of the serialized file
 >>> si.serialized_file
-'/to/your/pip/lib/path/dimcheck/dimcheck/si.pickle'
+'/to/your/pip/lib/path/packages/dimcheck/si.pickle'
 
 # Delete the serialized file
 >>> si.clean()
