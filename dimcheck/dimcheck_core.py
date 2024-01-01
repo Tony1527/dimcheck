@@ -98,6 +98,11 @@ class MissingSquareBracketError(Exception):
     '''
     pass
 
+class QuantityModeError(Exception):
+    '''Exception raised when a square bracket appears around quantities in the quantity mode.
+    '''
+    pass
+
 
 
 class MissingParenthesesError(Exception):
@@ -162,13 +167,15 @@ class Dimcheck:
         self._is_save = is_save
         self._serialized_file = None
         self._is_pretty = False
+        self._is_quant = False
         self._setting_file=setting_file
 
-        serialized_dimchecker, is_pretty, self._serialized_file, self._hash = self._compare_serialized_hash_match(quant_def_file=quant_def_file)
+        serialized_dimchecker, is_pretty, is_quant, self._serialized_file, self._hash = self._compare_serialized_hash_match(quant_def_file=quant_def_file)
         if serialized_dimchecker:
             self._dimchecker = serialized_dimchecker
             self._is_save = False
             self._is_pretty = is_pretty
+            self._is_quant = is_quant
         else:
             self._dimchecker = Dimchecker(quant_def_file=quant_def_file, unit_system=unit_system)
 
@@ -188,6 +195,21 @@ class Dimcheck:
         Set the output to be pretty or not.
         '''
         self._is_pretty = is_pretty
+
+
+    @property
+    def is_quant(self) -> bool:
+        '''
+        If True, then the symbols that users input will be regarded as quantities, then no square bracket is needed anymore.
+        '''
+        return self._is_quant      
+    
+    @is_quant.setter
+    def is_quant(self, is_quant: bool) -> None:
+        '''
+        Set the output to be pretty or not.
+        '''
+        self._is_quant = is_quant
 
 
     @property
@@ -239,7 +261,7 @@ class Dimcheck:
         expr : str
             dimension of the input
         '''
-        return str(self._dimchecker.dimension(s,is_pretty=self._is_pretty))
+        return str(self._dimchecker.dimension(s,is_pretty=self._is_pretty,is_quant=self._is_quant))
     
     def dim(self,s: str) -> str:
         '''Alias of Dimcheck.dimension.
@@ -277,12 +299,12 @@ class Dimcheck:
         bool
             Return True if the dimensions on two sides are equal, otherwise return False.
         '''
-        return self._dimchecker.is_dc(lhs,rhs, is_print=is_print, is_pretty=self._is_pretty)
+        return self._dimchecker.is_dc(lhs,rhs, is_print=is_print, is_pretty=self._is_pretty,is_quant=self._is_quant)
 
     def quant(self,s: str, is_print=False) -> Any:
         '''Print the possible quantity by deriving the combination of quantities.
         '''
-        quant = self._dimchecker.quant(s, is_print=is_print, is_pretty=self._is_pretty)
+        quant = self._dimchecker.quant(s, is_print=is_print, is_pretty=self._is_pretty,is_quant=self._is_quant)
         if quant:
             if len(quant)==1:
                 return quant[0]
@@ -294,12 +316,12 @@ class Dimcheck:
     def all_expr(self, is_inc_alias: bool=False, is_sorted: bool=True):
         '''Display all expressions based on the quantity definition file.
         '''
-        self._dimchecker.display_all_expr(is_inc_alias=is_inc_alias, is_pretty=self._is_pretty, is_sorted=is_sorted)
+        self._dimchecker.display_all_expr(is_inc_alias=is_inc_alias, is_pretty=self._is_pretty, is_sorted=is_sorted, is_quant=self._is_quant)
 
     def all_quant(self, is_inc_alias: bool=False, is_sorted: bool=True):
         '''Display all quantities based on the quantity definition file.
         '''
-        self._dimchecker.display_all_quant(is_inc_alias=is_inc_alias, is_pretty=self._is_pretty, is_sorted=is_sorted)
+        self._dimchecker.display_all_quant(is_inc_alias=is_inc_alias, is_pretty=self._is_pretty, is_sorted=is_sorted, is_quant=self._is_quant)
 
     def save_all_quant(self, file_path=_DIMCHECK_DEFAULT_OUTPUT_DIR+"Quantities.csv", is_sorted: bool=True) -> bool:
         '''Save all quantities in ".csv" format based on the quantity definition file.
@@ -309,7 +331,7 @@ class Dimcheck:
         file_path : str, optional
             so far, only ".csv" format is allowed, by default "./Quantities.csv"
         '''
-        return self._dimchecker.save_all_quant(file_path=file_path, is_pretty=self._is_pretty, is_sorted=is_sorted)
+        return self._dimchecker.save_all_quant(file_path=file_path, is_pretty=self._is_pretty, is_sorted=is_sorted, is_quant=self._is_quant)
 
     def save_all_expr(self, file_path=_DIMCHECK_DEFAULT_OUTPUT_DIR+"Expressions.csv", is_sorted: bool=True) -> bool:
         '''Save all expression in ".csv" format based on the quantity definition file.
@@ -319,7 +341,7 @@ class Dimcheck:
         file_path : str, optional
             so far, only ".csv" format is allowed, by default "./Quantities.csv"
         '''
-        return self._dimchecker.save_all_expr(file_path=file_path, is_pretty=self._is_pretty, is_sorted=is_sorted)
+        return self._dimchecker.save_all_expr(file_path=file_path, is_pretty=self._is_pretty, is_sorted=is_sorted, is_quant=self._is_quant)
 
     def save(self) -> bool:
         '''Serialize the current object
@@ -354,7 +376,7 @@ class Dimcheck:
         expr : str
             The formula based on the rhs and omit_quant
         '''
-        return self._dimchecker.omit_quant(lhs=lhs, rhs=rhs, omit_quant=omit_quant, is_pretty=self._is_pretty)
+        return self._dimchecker.omit_quant(lhs=lhs, rhs=rhs, omit_quant=omit_quant, is_pretty=self._is_pretty,is_quant=self._is_quant)
 
     def formula(self, lhs: str, parameters: list) -> str:
         '''Print the formula of the target based on the parameters.
@@ -381,6 +403,7 @@ class Dimcheck:
             data["unit_system"] = self._unit_system
             data["quant_def_file"] = self._quant_def_file
             data["is_pretty"] = self._is_pretty
+            data["is_quant"] = self._is_quant
 
             data["hash"] = self._hash
             data["dimcheck_obj"] = self._dimchecker
@@ -393,6 +416,7 @@ class Dimcheck:
         ## Compare the hash of the quantity definition file and the serialized object
         serialized_dimcheck_obj = None
         is_pretty = False
+        is_quant = False
         quant_def_file_hash = ""
         pickle_file = self._get_serialized_path(quant_def_file=quant_def_file)
         
@@ -401,13 +425,14 @@ class Dimcheck:
                 data = pickle.load(f)
                 serialized_hash = data["hash"]
                 is_pretty = data["is_pretty"]
+                is_quant = data["is_quant"]
                 quant_def_file_hash = self._cal_quant_def_file_hash(quant_def_file)
                 if serialized_hash == quant_def_file_hash:
                     serialized_dimcheck_obj = data["dimcheck_obj"]
         else:
             quant_def_file_hash = ""
         
-        return serialized_dimcheck_obj, is_pretty, pickle_file, quant_def_file_hash
+        return serialized_dimcheck_obj, is_pretty, is_quant, pickle_file, quant_def_file_hash
     
     def _cal_quant_def_file_hash(self, quant_def_file, hash_method=hashlib.md5):
         ## Calculate the hash of the quantity definition file
@@ -700,7 +725,7 @@ class Dimchecker():
         else:
             return default
 
-    def save_all_quant(self, file_path: str, is_pretty: bool=False, is_sorted: bool=True) -> bool:
+    def save_all_quant(self, file_path: str, is_pretty: bool=False, is_sorted: bool=True, is_quant: bool=False) -> bool:
         ## Save all quantities in the csv file
         with open(file_path, mode="w", encoding="utf-8") as f:
             f.write("{},{},{},{},{},{}".format("Quantity", "Discription", "Definition", "Unit", "Alias", os.linesep))
@@ -729,13 +754,19 @@ class Dimchecker():
                     quant_s = unit.quant_form
                     alias_s = unit.alias
                     def_s = unit.definition
+
+                
+                if is_quant:
+                    quant_s = quant_s.strip("[]")
+                    if alias_s:
+                        alias_s = [a.strip("[]") for a in alias_s]
                 one_line += "{},{},{},{},{},{}".format(self._save_default_str(quant_s), self._save_default_str(unit.discription), self._save_default_str(def_s), self._save_default_str(expr_s), self._save_default_str(alias_s),os.linesep)
                 f.write(one_line)
 
         return True
 
 
-    def save_all_expr(self, file_path: str, is_pretty: bool=False, is_sorted: bool=True) -> bool:
+    def save_all_expr(self, file_path: str, is_pretty: bool=False, is_sorted: bool=True, is_quant: bool=False) -> bool:
         ## Save all expressions in the csv file
         with open(file_path, mode="w", encoding="utf-8") as f:
             f.write("{},{},{}".format("Unit", "Quantity", os.linesep))
@@ -753,19 +784,19 @@ class Dimchecker():
                     pretty_quants = []
                     for quant in quants:
                         pretty_quants.append(self._pretty_sp_expr(quant))
-                    quants_s = self._quant2str(pretty_quants)
+                    quants_s = self._quant2str(pretty_quants, is_quant=is_quant)
                 else:
                     expr_s = expr
-                    quants_s = self._quant2str(quants)
+                    quants_s = self._quant2str(quants, is_quant=is_quant)
                 f.write("{},{},{}".format(self._save_default_str(expr_s), self._save_default_str(quants_s), os.linesep))
                 f.write(one_line)
 
         return True
 
-    def omit_quant(self, lhs: str, rhs: str, omit_quant: list=[], is_pretty = False):
+    def omit_quant(self, lhs: str, rhs: str, omit_quant: list=[], is_pretty = False, is_quant: bool=False):
         ## Restore the units of lhs based on the omitted quantities.
-        ldim=str(self.dimension(lhs,is_pretty=False))
-        rdim=str(self.dimension(rhs,is_pretty=False))
+        ldim=str(self.dimension(lhs,is_pretty=False, is_quant=is_quant))
+        rdim=str(self.dimension(rhs,is_pretty=False, is_quant=is_quant))
 
         ldim_array=self._generate_dim_array(ldim)
         rdim_array=self._generate_dim_array(rdim)
@@ -775,7 +806,7 @@ class Dimchecker():
             omit_quant = [omit_quant]
         
         for omitted_unit in omit_quant:
-            units_array.append(self._generate_dim_array(self.dimension(omitted_unit,is_pretty=False)))
+            units_array.append(self._generate_dim_array(self.dimension(omitted_unit, is_pretty=False, is_quant=is_quant)))
 
         ## in the Transpose form Ax=b, x=pinv(AT).b
         A=np.vstack(units_array).T
@@ -916,9 +947,9 @@ class Dimchecker():
         
         return dim_array
 
-    def dimension(self,s: str, is_pretty=False):
+    def dimension(self,s: str, is_pretty: bool=False, is_quant: bool=False):
         ## Get the dimension of the input
-        striped_str=self._strip_sqr_bkt(str(s))
+        striped_str=self._strip_sqr_bkt(str(s),is_quant=is_quant)
 
         try:
             expr=sp.powsimp(sympify(striped_str).subs(self._drv_unit_dict))
@@ -934,10 +965,10 @@ class Dimchecker():
         return self._generate_dim_array(expr)
 
 
-    def is_dc(self, lhs, rhs, is_print: bool=True, is_pretty: bool=False):
+    def is_dc(self, lhs, rhs, is_print: bool=True, is_pretty: bool=False, is_quant: bool=False):
         ## To see whether the quantities on the two sides are equal or not.
-        l=self.dimension(lhs,is_pretty=False)
-        r=self.dimension(rhs,is_pretty=False)
+        l=self.dimension(lhs,is_pretty=False, is_quant=is_quant)
+        r=self.dimension(rhs,is_pretty=False, is_quant=is_quant)
 
         l_s=None
         r_s=None
@@ -964,7 +995,7 @@ class Dimchecker():
             
                 
             if missing_quant:
-                missing_term = self._quant2str(missing_quant[0])
+                missing_term = self._quant2str(missing_quant[0], is_quant=is_quant)
                 if is_print:
                     print("According to the quantity definition file, there is a direct connection on two sides: {} * {} = {},".format(lhs, missing_term, rhs))
                     print("where {} = {}.".format(missing_term, self._pretty_sp_expr(missing_dim)))
@@ -972,22 +1003,22 @@ class Dimchecker():
                 missing_dim = "1/"+str(missing_dim)
                 missing_quant = self._quant(missing_dim,is_print=False,is_pretty=is_pretty)
                 if missing_quant:
-                    missing_term = self._quant2str(missing_quant[0])
+                    missing_term = self._quant2str(missing_quant[0], is_quant=is_quant)
                     if is_print:
                         print("According to the quantity definition file, there is a direct connection on two sides: {}  = {} * {},".format(lhs, missing_term, rhs))
                         print("where {} = {}.".format(missing_term, self._pretty_sp_expr(missing_dim)))
 
             return False
 
-    def quant(self, s, is_print: bool=False, is_pretty: bool=False):
+    def quant(self, s, is_print: bool=False, is_pretty: bool=False, is_quant: bool=False):
         ## Print the possible quantity by deriving the combination of quantities.
-        quant_list = self._unwrap_quant(self._quant(dim=self.dimension(s,is_pretty=False), s=s, is_print=is_print, is_pretty=is_pretty))
+        quant_list = self._unwrap_quant(self._quant(dim=self.dimension(s,is_pretty=False,is_quant=is_quant), s=s, is_print=is_print, is_pretty=is_pretty), is_quant=is_quant)
         if is_pretty and quant_list:
             for i in range(len(quant_list)):
                 quant_list[i] = self._pretty_sp_expr(quant_list[i])
         return quant_list
         
-    def display_all_expr(self, is_inc_alias: bool=False, is_pretty: bool=False, is_sorted: bool=True):
+    def display_all_expr(self, is_inc_alias: bool=False, is_pretty: bool=False, is_sorted: bool=True, is_quant: bool=False):
         ## Display all expressions based on the quantity definition file.
         print("All Expression:")
         keys = []
@@ -998,13 +1029,13 @@ class Dimchecker():
         for expr in keys:
             quants = self._expr_dict[expr]
             s = self._pretty_sp_expr(str(expr)).ljust(60," ")
-            quant = self._quant2str(quants, is_inc_alias=is_inc_alias)
+            quant = self._quant2str(quants, is_inc_alias=is_inc_alias, is_quant=is_quant)
             if is_pretty:
                 s = self._pretty_sp_expr(s)
                 quant = self._pretty_sp_expr(quant)
             print("{} {}".format(s, quant))
 
-    def display_all_quant(self, is_inc_alias: bool=False, is_pretty: bool=False, is_sorted: bool=True):
+    def display_all_quant(self, is_inc_alias: bool=False, is_pretty: bool=False, is_sorted: bool=True, is_quant: bool=False):
         ## Display all quantities based on the quantity definition file.
         print("All Quantities:")
 
@@ -1020,6 +1051,13 @@ class Dimchecker():
             discription = unit.discription
             expr = unit.expr
             alias = unit.alias
+
+            if is_quant:
+                quant = quant.strip("[]")
+                if alias:
+                    alias = [a.strip("[]") for a in alias]
+
+            
             if is_pretty:
                 expr_s = self._pretty_sp_expr(expr)
             else:
@@ -1069,7 +1107,7 @@ class Dimchecker():
             return wraped_list
         
 
-    def _unwrap_quant(self,quant):
+    def _unwrap_quant(self,quant,is_quant: bool=False):
         ## Unwrap a quantity or some quantities with a prefix "_dimcheck_quant_"
         if not quant:
             return None
@@ -1078,33 +1116,52 @@ class Dimchecker():
             if self._is_base_unit(quant) or self._is_reserved_keywords(quant):
                 return quant
             else:
-                return "["+quant.replace("_dimcheck_quant_","")+"]"
+                if is_quant:
+                    return quant.replace("_dimcheck_quant_","")
+                else:
+                    return "["+quant.replace("_dimcheck_quant_","")+"]"
         else:
             unwraped_list=[]
             for x in quant:
                 if self._is_base_unit(x) or self._is_reserved_keywords(quant):
                     s=x
                 else:
-                    s="["+x.replace("_dimcheck_quant_","")+"]"
+                    if is_quant:
+                        s=x.replace("_dimcheck_quant_","")
+                    else:
+                        s="["+x.replace("_dimcheck_quant_","")+"]"
                 unwraped_list.append(s)
             return unwraped_list
     
 
-    def _quant2str(self, quant, is_inc_alias=False):
+    def _quant2str(self, quant, is_inc_alias: bool=False, is_quant: bool=False):
         ## translate a quantity or some quantities to the string format with its/their alias
         if isinstance(quant,str):
             quant_s = self._unwrap_quant(quant)
             if is_inc_alias and self._quant2alias_map[quant_s]:
-                return quant_s + " A" +str(self._quant2alias_map[quant_s])
+                alias = self._quant2alias_map[quant_s]
+                alias_s = str([a.strip("[]") for a in alias])
+                if is_quant:
+                    return quant_s.strip() + " A" + alias_s
+                else:
+                    return quant_s + " A" + alias_s
             else:
                 return quant_s
         else:
             s = ""
             for x in self._unwrap_quant(quant):
-                if is_inc_alias and self._quant2alias_map[x]:
-                    s += x + " A"+ str(self._quant2alias_map[x]) + " "
+                
+                if is_quant:
+                    x_s = x.strip("[]")
                 else:
-                    s += x + " "
+                    x_s = x
+
+                if is_inc_alias and self._quant2alias_map[x]:
+                    alias = self._quant2alias_map[x]
+                    alias_s = str([a.strip("[]") for a in alias])
+                    s += x_s + " A"+ alias_s + " "
+                else:
+                    s += x_s + " "
             return s
 
     def _is_base_unit(self, s: str):
@@ -1129,7 +1186,7 @@ class Dimchecker():
             return alias
 
 
-    def _strip_sqr_bkt(self, s: str, is_def_sym: bool = False):
+    def _strip_sqr_bkt(self, s: str, is_def_sym: bool = False, is_quant: bool = False):
         ## Strip the square brakets of the input
         def check_quant_in_symbols(quant,origin_s):
             if not self._is_in_existing_symbols(quant):
@@ -1140,10 +1197,6 @@ class Dimchecker():
 
         origin_s=copy.copy(s)
 
-        bkts=re.findall("\[\]",s)
-        if bkts:
-            raise MissingQuantError("Missing a value for the bracket {}".format(s))
-        
         prefix_num_s=re.findall("\s*[^_][\d]+[a-zA-Z][\w_]*\s*",s)
         if prefix_num_s:
             raise InvalidSymFormatError("Invalid symbol format {}".format(s))
@@ -1151,62 +1204,99 @@ class Dimchecker():
         invalid_pow_obj = re.search(r"(\*\*\s*-*\d+\s*/\s*\d+\s*|\^\s*-*\d+\s*/\s*\d+\s*)",s)
         if invalid_pow_obj:
             raise MissingParenthesesError("Missing parentheses for {}. Since in Python, the priority of '**' is higher than '/', then e.g. 'a**1/2' will be parsed as '(a**1)/2' in Python.".format(s))
-            # raise Invali
+
         
-        
-        ## Find [m][eps_0] form and replace them with [m][eps_0].
-        quants=re.findall(r"\]\s*\[",s)
-        for quant in quants:
-            s=s.replace(quant,"]*[")
 
-        ## Find [m],[eps_0]... form variables.
-        quants=re.findall(r"\[\s*[a-zA-Z][\w_]*\s*\]",s)
-        for quant in quants:
-            if not is_def_sym:
-                check_quant_in_symbols(quant,origin_s)
-            tmp=self._wrap_quant(self._check_and_replace_alias(quant).strip("[]").strip())
-            s=s.replace(quant,tmp)
+        if not is_quant:
+            bkts=re.findall("\[\]",s)
+            if bkts:
+                raise MissingQuantError("Missing a value for the bracket {}".format(s))
+            
+            ## Find [m][eps_0] form and replace them with [m][eps_0].
+            quants=re.findall(r"\]\s*\[",s)
+            for quant in quants:
+                s=s.replace(quant,"]*[")
 
-        ## Find [sgm*c/E]... form quantiables.
-        combined_quants=re.findall(r"\[.*?\]",s)
-        for combined_quant in combined_quants:
-            new_quants=combined_quant.strip("[]").strip()
-            ## Remove the space at the beginning and end of the operator"/","*"
-            new_quants=re.sub(r"\s*([/\*])\s*",rm_mul_div_space,new_quants)
-            ## Substitute the space with "*"
-            new_quants=re.sub(r"\s+","*",new_quants)
+            ## Find [m],[eps_0]... form variables.
+            quants=re.findall(r"\[\s*[a-zA-Z][\w_]*\s*\]",s)
+            for quant in quants:
+                if not is_def_sym:
+                    check_quant_in_symbols(quant,origin_s)
+                tmp=self._wrap_quant(self._check_and_replace_alias(quant).strip("[]").strip())
+                s=s.replace(quant,tmp)
 
-            quants=re.findall(r"\b[a-zA-Z][\w_]*\b",new_quants)
+            ## Find [sgm*c/E]... form quantiables.
+            combined_quants=re.findall(r"\[.*?\]",s)
+            for combined_quant in combined_quants:
+                new_quants=combined_quant.strip("[]").strip()
+                ## Remove the space at the beginning and end of the operator"/","*"
+                new_quants=re.sub(r"\s*([/\*])\s*",rm_mul_div_space,new_quants)
+                ## Substitute the space with "*"
+                new_quants=re.sub(r"\s+","*",new_quants)
+
+                quants=re.findall(r"\b[a-zA-Z][\w_]*\b",new_quants)
+                for quant in quants:
+                    if self._is_reserved_keywords(quant):
+                        continue
+                    if not is_def_sym:
+                        check_quant_in_symbols("["+quant+"]",origin_s)
+                    tmp=self._wrap_quant(self._check_and_replace_alias("["+quant+"]").strip("[]").strip())
+                    ## Replace the quantity with the wrapped quantity, be careful about the re.sub method. 
+                    ## It is only recommended to be used in the case where the word that is going to be replace is not at two boundaries.
+                    new_quants=re.sub(r"\b"+quant+r"\b",tmp,new_quants) 
+                new_quants="("+new_quants+")"
+                s=s.replace(combined_quant,new_quants)
+
+
+            ## Check whether brakets match or not.
+            bkts=re.findall("[\[\]]",s)
+            if bkts:
+                raise SquareBracketMismatchError("Brakets does not match for {}".format(origin_s))
+            
+            ## Check brakets for quantities
+            quants=re.findall(r"\b[a-zA-Z][\w_]*\b",s)
+            for quant in quants:
+                ## There is also a case that the quantity is a reserved keyword, e.g. sqrt, so we need to check it.
+                if not self._is_base_unit(quant) and not self._is_reserved_keywords(quant): 
+                    raise MissingSquareBracketError("Missing a braket for the quantity {}".format(quant))
+        else:
+            bkts=re.findall(r"[\[\]]",s)
+            if bkts:
+                raise QuantityModeError("Square bracktes around {} should be removed in the quantity mode".format(s))
+            
+            quants=re.findall(r"[a-zA-Z][\w_]*",s)
             for quant in quants:
                 if self._is_reserved_keywords(quant):
                     continue
                 if not is_def_sym:
                     check_quant_in_symbols("["+quant+"]",origin_s)
                 tmp=self._wrap_quant(self._check_and_replace_alias("["+quant+"]").strip("[]").strip())
-                ## Replace the quantity with the wrapped quantity, be careful about the re.sub method. 
-                ## It is only recommended to be used in the case where the word that is going to be replace is not at two boundaries.
-                new_quants=re.sub(r"\b"+quant+r"\b",tmp,new_quants) 
-            new_quants="("+new_quants+")"
-            s=s.replace(combined_quant,new_quants)
+                # s=s.replace(quant,tmp)
+                s = re.sub(r"\b"+quant+r"\b",tmp,s)
+
+            ## Check brakets for quantities
+            quants=re.findall(r"\b[a-zA-Z][\w_]*\b",s)
+            for quant in quants:
+                ## There is also a case that the quantity is a reserved keyword, e.g. sqrt, so we need to check it.
+                if not self._is_reserved_keywords(quant): 
+                    raise UnknownQuantityError("Unknown quantity {} is found in {}".format(quant,origin_s))
 
         ## Find all spaces between two quantities and replace them with "*".
-        s=re.sub(r"([a-zA-Z][\w_]*|\d+|\))\s+([a-zA-Z][\w_]*)",r"\1*\2",s)
-        # ## Remove all meaningless space.
+        while True:
+            new_s=re.sub(r"(_*[a-zA-Z][\w_]*|\d+|\))\s+(_*[a-zA-Z][\w_]*|\()",r"\1*\2",s)
+            if new_s==s:
+                break
+            else:
+                s = new_s
+        
+        # ## Remove all useless space.
         s.replace(" ","")
 
 
 
-        ## Check whether brakets match or not.
-        bkts=re.findall("[\[\]]",s)
-        if bkts:
-            raise SquareBracketMismatchError("Brakets does not match for {}".format(origin_s))
         
-        ## Check brakets for quantities
-        quants=re.findall(r"\b[a-zA-Z][\w_]*\b",s)
-        for quant in quants:
-            ## There is also a case that the quantity is a reserved keyword, e.g. sqrt, so we need to check it.
-            if not self._is_base_unit(quant) and not self._is_reserved_keywords(quant): 
-                raise MissingSquareBracketError("Missing a braket for the quantity {}".format(quant))
+        
+        
             
         return s
 
@@ -1215,13 +1305,15 @@ class Dimchecker():
         
 
 
-    def _quant(self, dim: Quantity, s: str="", is_print=False, is_pretty: bool=False):
+    def _quant(self, dim: Quantity, s: str="", is_print=False, is_pretty: bool=False, is_quant: bool=False):
         ## Print the possible quantity by deriving the combination of quantities.
         # quant=self._expr_dict.get(dim)
         quant=self._dim_arr_dict.get(self._generate_dim_array(dim).tobytes())
         if quant:
+            if is_quant:
+                quant = [q.strip("[]") for q in quant]
             if is_print:
-                print("Possible quantity for {} ({}): {}".format(s, dim, self._quant2str(quant, is_inc_alias=True)))
+                print("Possible quantity for {} ({}): {}".format(s, dim, self._quant2str(quant, is_inc_alias=True, is_quant=is_quant)))
             return quant
         else:
             if is_pretty:
@@ -1285,3 +1377,5 @@ if _DIMCHECK_CUSTOM_INSTANCE:
     cs=Dimcheck(quant_def_file=_dimcheck_path+os.sep+_DIMCHECK_CUSTOM_QUANT_DEF_FILE,is_save=_DIMCHECK_IS_SAVE, setting_file=_dimcheck_path+os.sep+"setting.json")
 else:
     cs=None
+
+# print(si.dim("hbar (v) ** (-3)* e ** (-2.0)/h"))

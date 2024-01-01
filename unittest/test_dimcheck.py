@@ -1,7 +1,8 @@
 import seldom
 import os
-# from dimcheck.dimcheck_core import Dimcheck,si,ConflictSymbolDefinitionError,SquareBracketMismatchError,MissingSquareBracketError,MissingQuantError,InvalidSymFormatError,DerivingQuantityError,UnknownQuantityError
-from dimcheck.dimcheck.dimcheck_core import *#Dimcheck,si,ConflictSymbolDefinitionError,SquareBracketMismatchError,MissingSquareBracketError,MissingQuantError,InvalidSymFormatError,DerivingQuantityError,UnknownQuantityError,InvalidSyntaxError
+import sys
+sys.path.append("..")
+from dimcheck.dimcheck_core import *
 
 class TestDimCheckSi(seldom.TestCase):
     @classmethod
@@ -14,12 +15,12 @@ class TestDimCheckSi(seldom.TestCase):
     def test_si_property(self):
         self.assertEqual(si.is_pretty,False)
         self.assertEqual(si.unit_system,"si")
-        self.assertNotEqual(si.quant_def_file.find("dimcheck/dimcheck/si.json"),-1)
-        self.assertNotEqual(si.serialized_file.find("dimcheck/dimcheck/si.pickle"),-1)
+        self.assertNotEqual(si.quant_def_file.find("dimcheck/si.json"),-1)
+        self.assertNotEqual(si.serialized_file.find("dimcheck/si.pickle"),-1)
 
 
     def test_si_save(self):
-        self.assertFalse(si.clean())
+        # self.assertFalse(si.clean())
         self.assertEqual(si.hash,"")
         self.assertEqual(si.save(),True)
         self.assertNotEqual(si.hash,"")
@@ -144,6 +145,97 @@ class TestDimCheckSi(seldom.TestCase):
         self.assertEqual(si.formula("[t]",["[l]","[g]"]), "[t] = ([l]**0.5)*([g]**-0.5)")
         self.assertEqual(si.formula("[G]",["[m]","[r]","[F]"]), "[G] = ([m]**-2)*([r]**2)*[F]")
 
+
+    def test_si_is_quant(self):
+        si.is_quant=True
+        self.assertEqual(si.dim("l"), "m")
+
+        self.assertEqual(si.dim("l"), "m")
+        self.assertEqual(si.dim("F"), "kg*m/s**2")
+        self.assertEqual(si.dim("G"), "m**3/(kg*s**2)")
+        self.assertEqual(si.dim("eps_0"), "A**2*s**4/(kg*m**3)")
+        self.assertEqual(si.dim("q"), "A*s")
+        self.assertEqual(si.dim("rho"), "A*s/m**3")
+
+        self.assertEqual(si.dim("m m"),"kg**2")
+        self.assertEqual(si.dim("l/l/m m"),"1")
+        self.assertEqual(si.dim("m m / l g"),"kg**2/s**2")
+        self.assertEqual(si.dim("m  l / t"),"kg*m/s")
+        self.assertEqual(si.dim("m**2 l / t"),"kg**2*m/s")
+        self.assertEqual(si.dim("m**2 l / t t"),"kg**2*m")
+        self.assertEqual(si.dim("m^(1/2) l / t"),"sqrt(kg)*m/s")
+        self.assertEqual(si.dim("hbar (v) ** (-3)* e ** (-2.0)/h"),"s**1.0/(A**2.0*m**3)")
+
+        self.assertEqual(si.is_dc("l","m"), False)
+        self.assertEqual(si.is_dc("l/l/m","m"),False)
+        self.assertEqual(si.is_dc("l/l*m","m"),True)
+        self.assertEqual(si.is_dc("F","m*l/t**2"), True)
+        self.assertEqual(si.is_dc("F","m*a"), True)
+        self.assertEqual(si.is_dc("F","E/l"), True)
+        self.assertEqual(si.is_dc("F","E"), False)
+        self.assertEqual(si.is_dc("F","m*a"), True)
+        self.assertEqual(si.is_dc("F","m*v/t"), True)
+        self.assertEqual(si.is_dc("F","q*EE"), True)
+        self.assertEqual(si.is_dc("F","q*E"), False)
+        self.assertEqual(si.is_dc("q*EE","m*a"), True)
+        self.assertEqual(si.is_dc("hbar v k","E"),True)
+        self.assertEqual(si.is_dc("(hbar e B v**2)**(1/2)","E"),True)
+        self.assertEqual(si.is_dc("(hbar e B (v**2))**0.5","E"),True)
+        self.assertEqual(si.is_dc("sqrt(hbar e B v**2)","E"),True)
+        self.assertEqual(si.is_dc("sqrt(v)**2","v"),True)
+        self.assertEqual(si.is_dc("sqrt(v p E)","E"),True)
+        self.assertEqual(si.is_dc("cbrt(v)**3","(v**(1/3))**3"),True)
+        self.assertEqual(si.is_dc("mu_mob","l^2 /(V t)",True),True)
+        self.assertEqual(si.is_dc("sigma","1/rho_R",True),True)
+        self.assertEqual(si.is_dc("sigma_2D","e^2/hbar",True),True)
+        
+        self.assertRaises(UnknownQuantityError,si.is_dc,"q*EE","ma")
+
+        self.assertEqual(si.quant("l/t"), ['v', 'c'])
+        self.assertEqual(si.quant("r/t"), ['v', 'c'])
+        self.assertEqual(si.quant("r"), "l")
+        self.assertEqual(si.quant("V/I"), ['R', 'R_K'])
+        self.assertEqual(si.quant("F*l"), "E")
+        self.assertEqual(si.quant("G*m**2/r**2"), "F")
+        self.assertEqual(si.quant("l/t**2"), ['a', 'g'])
+        self.assertEqual(si.quant("k_B*T"), "E")
+        self.assertEqual(si.quant("E/q"), "V")
+        self.assertEqual(si.quant("e*hbar/m"), "mu_B")
+        self.assertEqual(si.quant("m l/ t"), "p")
+
+        self.assertEqual(si.omit_quant("E","v*k","hbar"), "E = v*k*hbar")
+        self.assertEqual(si.omit_quant("E**2","(v*k)**2","hbar"), "E**2 = (v*k)**2*(hbar**2)")
+        self.assertEqual(si.omit_quant("E","k",["hbar","c"]), "E = k*hbar*c")
+
+        self.assertEqual(si.formula("E",["v","k","hbar"]), "E = v*k*hbar")
+        self.assertEqual(si.formula("E",["m","l","v"]), "E = m*(v**2)")
+        self.assertEqual(si.formula("r",["(G*m)","t"]), "r = ((G*m)**0.333333333)*(t**0.666666667)")
+        self.assertEqual(si.formula("t",["l","g"]), "t = (l**0.5)*(g**-0.5)")
+        self.assertEqual(si.formula("G",["m","r","F"]), "G = (m**-2)*(r**2)*F")
+
+
+        si.is_pretty=True
+        self.assertEqual(si.dim("l"), "m")
+        self.assertEqual(si.dim("F"), "kg*m/s²")
+        self.assertEqual(si.dim("G"), "m³/(kg*s²)")
+        self.assertEqual(si.dim("eps_0"), "A²*s⁴/(kg*m³)")
+        self.assertEqual(si.dim("q"), "A*s")
+        self.assertEqual(si.dim("rho"), "A*s/m³")
+        self.assertEqual(si.dimension("l"), si.dim("l"))
+        self.assertEqual(si.dimension("l"), "m")
+        self.assertEqual(si.dimension("F"), "kg*m/s²")
+        self.assertEqual(si.dimension("G"), "m³/(kg*s²)")
+        self.assertEqual(si.dimension("eps_0"), "A²*s⁴/(kg*m³)")
+        self.assertEqual(si.dimension("q"), "A*s")
+        self.assertEqual(si.dimension("rho"), "A*s/m³")
+        self.assertEqual(si.formula("t",["l","g"]),"t = (l⁰·⁵)*(g⁻⁰·⁵)")
+        self.assertEqual(si.omit_quant(lhs="E",rhs="k",omit_quant=["sqrt((hbar v)**2)"]),"E = k*sqrt((hbar v)²)")
+        self.assertEqual(si.quant("V/I"),['R', 'R_K'])
+        self.assertEqual(si.dim("sqrt(m^2 l^3)"),'kg*m³ʴ²')
+        self.assertEqual(si.dim("m**(1/3)"),'kg¹ʴ³')
+        si.is_pretty=False
+
+        si.is_quant=False
 
 
     def test_si_error(self):

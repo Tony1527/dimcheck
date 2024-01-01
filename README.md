@@ -1,5 +1,23 @@
 # dimcheck: A physics dimension checker based on sympy
 
+- [dimcheck: A physics dimension checker based on sympy](#dimcheck-a-physics-dimension-checker-based-on-sympy)
+  - [Description](#description)
+  - [Dependencies](#dependencies)
+  - [Installation](#installation)
+  - [Basic usage](#basic-usage)
+  - [Convention](#convention)
+  - [Advanced Usage](#advanced-usage)
+    - [Pretty printing](#pretty-printing)
+    - [Quantity Mode: Simpler format for inputting quantities](#quantity-mode-simpler-format-for-inputting-quantities)
+    - [Custom definition of the quantities](#custom-definition-of-the-quantities)
+    - [Serialization](#serialization)
+    - [Save and display all quantities or expressions](#save-and-display-all-quantities-or-expressions)
+  - [Methods](#methods)
+    - [Property](#property)
+    - [Dimension](#dimension)
+    - [Derive Formula](#derive-formula)
+    - [Save, clean and display](#save-clean-and-display)
+
 ## Description
 Dimcheck is a Python library that provides an interface for users to check, compare and manipulate dimensions of quantities. It is especially useful in scientific computing and physics, where ensuring correct dimensions is crucial.
 
@@ -9,6 +27,7 @@ python3
 sympy
 numpy
 ```
+
 
 ## Installation
 
@@ -66,6 +85,24 @@ None
 # Save the definition of quantities in a ".csv" format file. By default, it will save to the "./Quantities.csv".
 >>> si.save_all_quant()
 True
+
+# After switching to the "quantity" mode, one can remove the square brackets around symbols, which makes the whole formula more easy to write.
+>>> si.is_quant=True
+
+# After switching to the "pretty" mode, all exponents will show as superscripts.
+>>> si.is_pretty=True
+>>> si.quant("G m**2/r**2")  
+'F'
+>>> si.is_dc("E","m*v**2")  
+True
+>>> si.omit_quant(lhs="E",rhs="k",omit_quant=["hbar","v"])  
+'E = k*hbar*v'
+>>> si.dim("m*v**2")  
+'kg*m²/s²'
+
+# You can save these two modes by invoking si.save() method
+>>> si.save()
+True
 ```
 
 ## Convention
@@ -103,6 +140,21 @@ There is also a few reserved keywords like `sqrt` and `cbrt` for convenience,
 '[E]'
 ```
 
+7. Though quantities are recommended to be wrapped in square brackets, you can write quantities without a square bracket as you invoke the following instruction,
+```python
+>>> si.is_quant=True
+```
+After that all quantities can be simply write as
+```python
+>>> si.dim("m v^2")
+'kg*m**2/s**2'
+```
+The reason we introduce the square brackets is to distinguish quantities and base units. Since `[m]` represents the mass as the a quantity, `m` represents the base unit of length. So, if you only want to focus on the operation between quantities, and won't involve the base units in the formula, then we recommend you use the quantity mode as it is more convenient to write
+```python
+>>> si.is_quant=True
+```
+Even though, the quantity mode work in the terminal, it is still required to wrap quantities when defining other quantities in the `Custom definition of the quantities` section.
+
 ## Advanced Usage
 
 ### Pretty printing
@@ -128,6 +180,21 @@ True
 >>> si.dim("[m]**(1/3)")
 'kg¹ʴ³'
 ```
+
+### Quantity Mode: Simpler format for inputting quantities
+In the terminal mode, `Dimcheck` class (si is an instance of it) provides `is_quant` property to make the quantities more easy to input.
+```python
+>>> si.is_quant=True
+>>> si.quant("G m**2/r**2")  
+'F'
+>>> si.is_dc("E","m*v**2")  
+True
+>>> si.omit_quant(lhs="E",rhs="k",omit_quant=["hbar","v"])  
+'E = k*hbar*v'
+>>> si.dim("m*v**2")  
+'kg*m**2/s**2'
+```
+
 
 ### Custom definition of the quantities
 In `dimcheck`, you can define your own quantities and symbols by simply manipulate the `setting.json` file in the package directory. Here is the step to define your own unit system.
@@ -248,6 +315,7 @@ You can review above results from [Quantities.csv](./data/Quantities.csv) and [E
 | property    | Description           | Writable |
 | :---:       | :----------------     | :---:|   
 | is_pretty   | The output is setting to be more easy to read (based on some symbols in UTF-8) or not. | Yes|
+| is_quant   | Quantity mode | Yes|
 | setting_file   | Returns the path of the global setting file.| No|   
 | unit_system   | Returns the unit system.| No|  
 | quant_def_file   | Returns the path of the file of quantity definition.| No|  
