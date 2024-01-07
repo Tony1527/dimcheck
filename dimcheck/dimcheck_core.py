@@ -167,7 +167,7 @@ class Dimcheck:
         self._is_save = is_save
         self._serialized_file = None
         self._is_pretty = False
-        self._is_quant = False
+        self._is_quant = True
         self._setting_file=setting_file
 
         serialized_dimchecker, is_pretty, is_quant, self._serialized_file, self._hash = self._compare_serialized_hash_match(quant_def_file=quant_def_file)
@@ -248,6 +248,21 @@ class Dimcheck:
         '''
         return self._hash
 
+    def unit(self,s: str) -> str:
+        '''Get the unit of the input
+
+        Parameters
+        ----------
+        s : str
+            Any quantity or the combination of the quantities
+
+        Returns
+        -------
+        expr : str
+            unit of the input
+        '''
+        return str(self._dimchecker.unit(s,is_pretty=self._is_pretty,is_quant=self._is_quant))
+    
     def dimension(self,s: str) -> str:
         '''Get the dimension of the input
 
@@ -259,7 +274,7 @@ class Dimcheck:
         Returns
         -------
         expr : str
-            dimension of the input
+            unit of the input
         '''
         return str(self._dimchecker.dimension(s,is_pretty=self._is_pretty,is_quant=self._is_quant))
     
@@ -548,8 +563,12 @@ class Dimchecker():
         self._quant2alias_map={}
         
         kg, m, s, A, cd, K, mol  = sp.symbols("kg, m, s, A, cd, K, mol",positive=True)
+        M, L, T, I, J, Theta, N  = sp.symbols("M, L, T, I, J, Theta, N",positive=True)
 
         self._base_unit_dict={"kg":kg, "m":m, "s":s, "A":A, "cd":cd, "K":K, "mol":mol}
+        self._unit2dimension_str_dict={"kg":"M", "m":"L", "s":"T", "A":"I", "cd":"J", "K":"Theta", "mol":"N"}
+        self._unit2dimension_sym_dict={kg:M, m:L, s:T, A:I, cd:J, K:Theta, mol:N}
+        self._dimension_dict={"M":M, "L":L, "T":T, "I":I, "J":J, "Theta":Theta, "N":N}
 
         # self._base_unit_dict={"kg":"kg", "m":"m", "s":"s", "A":"A", "cd":"cd", "K":"K", "mol":"mol"}
         self._base_unit_order={"kg":0,"m":1,"s":2,"A":3,"cd":4,"K":5,"mol":6}
@@ -711,14 +730,15 @@ class Dimchecker():
 
     def _save_default_str(self, x, default=""):
         ## Save the default string for the csv file
-        if (not isinstance(x, str)) and hasattr(x, "__iter__"):
+        if (not isinstance(x, str)) and x!=None and hasattr(x, "__iter__"):
             s=""
             for i in range(len(x)):
                 v=x[i]
+
                 if i==0:
                     s += "{}".format(v)
                 else:
-                    s += " | {}".format(v)
+                    s += "  {}".format(v)
             return s
         elif x:
             return str(x).replace(",",".")
@@ -756,10 +776,10 @@ class Dimchecker():
                     def_s = unit.definition
 
                 
-                if is_quant:
-                    quant_s = quant_s.strip("[]")
-                    if alias_s:
-                        alias_s = [a.strip("[]") for a in alias_s]
+                # if is_quant:
+                #     quant_s = quant_s.strip("[]")
+                #     if alias_s:
+                #         alias_s = [a.strip("[]") for a in alias_s]
                 one_line += "{},{},{},{},{},{}".format(self._save_default_str(quant_s), self._save_default_str(unit.discription), self._save_default_str(def_s), self._save_default_str(expr_s), self._save_default_str(alias_s),os.linesep)
                 f.write(one_line)
 
@@ -784,10 +804,10 @@ class Dimchecker():
                     pretty_quants = []
                     for quant in quants:
                         pretty_quants.append(self._pretty_sp_expr(quant))
-                    quants_s = self._quant2str(pretty_quants, is_quant=is_quant)
+                    quants_s = self._quant2str(pretty_quants, is_quant=False)
                 else:
                     expr_s = expr
-                    quants_s = self._quant2str(quants, is_quant=is_quant)
+                    quants_s = self._quant2str(quants, is_quant=False)
                 f.write("{},{},{}".format(self._save_default_str(expr_s), self._save_default_str(quants_s), os.linesep))
                 f.write(one_line)
 
@@ -795,8 +815,8 @@ class Dimchecker():
 
     def omit_quant(self, lhs: str, rhs: str, omit_quant: list=[], is_pretty = False, is_quant: bool=False):
         ## Restore the units of lhs based on the omitted quantities.
-        ldim=str(self.dimension(lhs,is_pretty=False, is_quant=is_quant))
-        rdim=str(self.dimension(rhs,is_pretty=False, is_quant=is_quant))
+        ldim=str(self.unit(lhs,is_pretty=False, is_quant=is_quant))
+        rdim=str(self.unit(rhs,is_pretty=False, is_quant=is_quant))
 
         ldim_array=self._generate_dim_array(ldim)
         rdim_array=self._generate_dim_array(rdim)
@@ -806,7 +826,7 @@ class Dimchecker():
             omit_quant = [omit_quant]
         
         for omitted_unit in omit_quant:
-            units_array.append(self._generate_dim_array(self.dimension(omitted_unit, is_pretty=False, is_quant=is_quant)))
+            units_array.append(self._generate_dim_array(self.unit(omitted_unit, is_pretty=False, is_quant=is_quant)))
 
         ## in the Transpose form Ax=b, x=pinv(AT).b
         A=np.vstack(units_array).T
@@ -823,8 +843,22 @@ class Dimchecker():
             for i in range(len(omit_quant)):
                 omitted_unit = omit_quant[i]
                 exp = _keep_sig(x[i])
+                single_word_match=re.match(r"^[a-zA-Z][\w_]*\r?$",omitted_unit)
+
                 if exp == int(exp):
                     exp = int(exp)
+                    exp_str = str(exp)
+                else:
+                    exp_str = "({:.9})".format(exp)
+
+                if single_word_match or not is_quant:
+                    omitted_unit_str = omitted_unit
+                else:
+                    omitted_unit_str = "("+omitted_unit+")"
+
+                
+
+                
                 if _equal_to_abs(exp,0):
                     continue
                 elif _equal_to_abs(exp,1):
@@ -834,15 +868,19 @@ class Dimchecker():
                         s+="*{}".format(omitted_unit)
                 else:
                     if is_rhs_unit_s and i==0:
-                        if isinstance(exp,int):
-                            s+="({}**{})".format(omitted_unit,exp)        
-                        else:
-                            s+="({}**{:.9})".format(omitted_unit,exp)    
+                        s+="{}**{}".format(omitted_unit_str,exp_str) 
                     else:
-                        if isinstance(exp,int):
-                            s+="*({}**{})".format(omitted_unit,exp)
-                        else:
-                            s+="*({}**{:.9})".format(omitted_unit,exp)
+                        s+="*{}**{}".format(omitted_unit_str,exp_str) 
+                        # if is_quant:
+                        #     if isinstance(exp,int):
+                        #         s+="*({})**({})".format(omitted_unit,exp)
+                        #     else:
+                        #         s+="*({})**({:.9})".format(omitted_unit,exp)
+                        # else:
+                        #     if isinstance(exp,int):
+                        #         s+="*({}**{})".format(omitted_unit,exp)
+                        #     else:
+                        #         s+="*({}**{:.9})".format(omitted_unit,exp)
             # print("Based on the omitted quantities, a formula between lhs and rhs is found:")
             # print(s)
                         
@@ -933,7 +971,7 @@ class Dimchecker():
         keywords_obj = re.search(r"(cbrt|sqrt)",expr)
         pow_obj = re.search(r"(\*\*\(-*\d+\/\d+\)|\^\(-*\d+\/\d+\))",expr)
         if pow_obj or keywords_obj:
-            raise DerivingQuantityError("When comparing the dimension of two quantities, the exponent of the dimension must be an integer rather than {}.".format(expr))
+            raise DerivingQuantityError("When comparing the unit of two quantities, the exponent of the unit must be an integer rather than {}.".format(expr))
 
         parts=expr.split("/")
         if len(parts)==2:
@@ -943,22 +981,29 @@ class Dimchecker():
         elif len(parts)==0:
             dim_array = convert_dim_array(parts[0].strip("()"))
         else:
-            raise InvalidSymFormatError("the dimension array of {} can't be obtained.".format(expr))
+            raise InvalidSymFormatError("the unit array of {} can't be obtained.".format(expr))
         
         return dim_array
 
-    def dimension(self,s: str, is_pretty: bool=False, is_quant: bool=False):
-        ## Get the dimension of the input
+    def unit(self,s: str, is_pretty: bool=False, is_quant: bool=False):
+        ## Get the unit of the input
         striped_str=self._strip_sqr_bkt(str(s),is_quant=is_quant)
 
         try:
-            expr=sp.powsimp(sympify(striped_str).subs(self._drv_unit_dict))
+            expr=str(sp.powsimp(sympify(striped_str).subs(self._drv_unit_dict)))
         except SympifyError:
             raise InvalidSyntaxError("Invalid syntax: {}".format(s))
         if is_pretty:
-            expr=self._pretty_sp_expr(expr)
+            expr=str(self._pretty_sp_expr(expr))
             
         return expr
+    
+    def dimension(self,s: str, is_pretty: bool=False, is_quant: bool=False):
+        ## Get the dimension of the input
+        unit = self.unit(s,is_pretty=is_pretty,is_quant=is_quant)
+        for key,value in self._unit2dimension_str_dict.items():
+            unit = unit.replace(key,value)
+        return unit
     
     def dimension_array(self, expr: str):
         ## Get the dimension array of the input
@@ -967,8 +1012,8 @@ class Dimchecker():
 
     def is_dc(self, lhs, rhs, is_print: bool=True, is_pretty: bool=False, is_quant: bool=False):
         ## To see whether the quantities on the two sides are equal or not.
-        l=self.dimension(lhs,is_pretty=False, is_quant=is_quant)
-        r=self.dimension(rhs,is_pretty=False, is_quant=is_quant)
+        l=self.unit(lhs,is_pretty=False, is_quant=is_quant)
+        r=self.unit(rhs,is_pretty=False, is_quant=is_quant)
 
         l_s=None
         r_s=None
@@ -990,7 +1035,7 @@ class Dimchecker():
         else:
             if is_print:
                 print("There are some differences on two sides. {} != {} ({} != {})".format(lhs, rhs, l_s, r_s))
-            missing_dim   = self.dimension("("+str(r)+")/("+str(l)+")",is_pretty=False)
+            missing_dim   = self.unit("("+str(r)+")/("+str(l)+")",is_pretty=False)
             missing_quant = self._quant(missing_dim,is_print=False,is_pretty=is_pretty)
             
                 
@@ -1012,7 +1057,7 @@ class Dimchecker():
 
     def quant(self, s, is_print: bool=False, is_pretty: bool=False, is_quant: bool=False):
         ## Print the possible quantity by deriving the combination of quantities.
-        quant_list = self._unwrap_quant(self._quant(dim=self.dimension(s,is_pretty=False,is_quant=is_quant), s=s, is_print=is_print, is_pretty=is_pretty), is_quant=is_quant)
+        quant_list = self._unwrap_quant(self._quant(dim=self.unit(s,is_pretty=False,is_quant=is_quant), s=s, is_print=is_print, is_pretty=is_pretty), is_quant=is_quant)
         if is_pretty and quant_list:
             for i in range(len(quant_list)):
                 quant_list[i] = self._pretty_sp_expr(quant_list[i])
@@ -1377,5 +1422,3 @@ if _DIMCHECK_CUSTOM_INSTANCE:
     cs=Dimcheck(quant_def_file=_dimcheck_path+os.sep+_DIMCHECK_CUSTOM_QUANT_DEF_FILE,is_save=_DIMCHECK_IS_SAVE, setting_file=_dimcheck_path+os.sep+"setting.json")
 else:
     cs=None
-
-# print(si.dim("hbar (v) ** (-3)* e ** (-2.0)/h"))
