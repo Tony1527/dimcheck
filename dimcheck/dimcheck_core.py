@@ -77,9 +77,7 @@ with open(_dimcheck_path+os.sep+"setting.json") as f:
     else:
         _DIMCHECK_DEFAULT_OUTPUT_DIR = json_str["output"] + os.sep
     _DIMCHECK_SI_INSTANCE = json_str["si_instance"]
-    _DIMCHECK_CUSTOM_INSTANCE = json_str["custom_instance"]
     _DIMCHECK_IS_SAVE = json_str["is_save"]
-    _DIMCHECK_CUSTOM_QUANT_DEF_FILE = json_str["custom_quant_def_file"]
 
 
 
@@ -368,7 +366,7 @@ class Dimcheck:
         '''
         if os.path.exists(self._serialized_file):
             self._hash = ""
-            os.system('rm "'+ self._serialized_file+'"')
+            os.remove(self._serialized_file)
             return True
         else:
             print("{} does not exist!".format(self._serialized_file))
@@ -436,14 +434,18 @@ class Dimcheck:
         pickle_file = self._get_serialized_path(quant_def_file=quant_def_file)
         
         if os.path.exists(pickle_file):
-            with open(pickle_file,"rb") as f:
-                data = pickle.load(f)
-                serialized_hash = data["hash"]
-                is_pretty = data["is_pretty"]
-                is_quant = data["is_quant"]
-                quant_def_file_hash = self._cal_quant_def_file_hash(quant_def_file)
-                if serialized_hash == quant_def_file_hash:
-                    serialized_dimcheck_obj = data["dimcheck_obj"]
+            try:
+                with open(pickle_file,"rb") as f:
+                    data = pickle.load(f)
+                    serialized_hash = data["hash"]
+                    is_pretty = data["is_pretty"]
+                    is_quant = data["is_quant"]
+                    quant_def_file_hash = self._cal_quant_def_file_hash(quant_def_file)
+                    if serialized_hash == quant_def_file_hash:
+                        serialized_dimcheck_obj = data["dimcheck_obj"]
+            except Exception as e:
+                print("The serialized file {} is outdated! It will remove the outdated data automatically.".format(pickle_file))
+                os.remove(pickle_file)
         else:
             quant_def_file_hash = ""
         
@@ -814,6 +816,33 @@ class Dimchecker():
         return True
 
     def omit_quant(self, lhs: str, rhs: str, omit_quant: list=[], is_pretty = False, is_quant: bool=False):
+        def is_solvable(A, b):
+            x=np.dot(np.linalg.pinv(A),b)
+            if not np.allclose(np.dot(A,x),b):
+                return False
+            else:
+                return True
+            
+        def search_min_array(chosen_units, remained_units, b):
+            r=copy.copy(remained_units)
+            rtn=None
+            idx_list, chosen_units_list= chosen_units
+            for i in range(len(r)):
+                idx,v=r.pop()
+                new_idx_list=idx_list+[idx]
+                tmp_array = chosen_units_list+[v]
+                A=np.vstack(tmp_array).T
+                if len(tmp_array)<len(omit_quant) and is_solvable(A,b):
+                    rtn = (new_idx_list,tmp_array)
+                    break
+
+                rtn = search_min_array(chosen_units = (new_idx_list,tmp_array),remained_units=r, b=b)
+                if rtn!=None:
+                    break
+            return rtn
+
+        
+
         ## Restore the units of lhs based on the omitted quantities.
         ldim=str(self.unit(lhs,is_pretty=False, is_quant=is_quant))
         rdim=str(self.unit(rhs,is_pretty=False, is_quant=is_quant))
@@ -829,67 +858,95 @@ class Dimchecker():
             units_array.append(self._generate_dim_array(self.unit(omitted_unit, is_pretty=False, is_quant=is_quant)))
 
         ## in the Transpose form Ax=b, x=pinv(AT).b
-        A=np.vstack(units_array).T
+        A=np.vstack(units_array)
         b=ldim_array - rdim_array
-        x=np.dot(np.linalg.pinv(A),b)
         
-        if np.allclose(np.dot(A,x),b):
-            is_rhs_unit_s=False
-            if rhs == "1":
-                is_rhs_unit_s=True
-                s="{} = ".format(lhs,rhs)
-            else:
-                s="{} = {}".format(lhs,rhs)
-            for i in range(len(omit_quant)):
-                omitted_unit = omit_quant[i]
-                exp = _keep_sig(x[i])
-                single_word_match=re.match(r"^[a-zA-Z][\w_]*\r?$",omitted_unit)
+        mask_A=A!=0
+        mask_b=b!=0
+        l=[np.any((mask_A==mask_b)[:,i]) for i in range(len(b))]
 
-                if exp == int(exp):
-                    exp = int(exp)
-                    exp_str = str(exp)
-                else:
-                    exp_str = "({:.9})".format(exp)
-
-                if single_word_match or not is_quant:
-                    omitted_unit_str = omitted_unit
-                else:
-                    omitted_unit_str = "("+omitted_unit+")"
-
-                
-
-                
-                if _equal_to_abs(exp,0):
-                    continue
-                elif _equal_to_abs(exp,1):
-                    if is_rhs_unit_s and i==0:
-                        s+="{}".format(omitted_unit)    
-                    else:
-                        s+="*{}".format(omitted_unit)
-                else:
-                    if is_rhs_unit_s and i==0:
-                        s+="{}**{}".format(omitted_unit_str,exp_str) 
-                    else:
-                        s+="*{}**{}".format(omitted_unit_str,exp_str) 
-                        # if is_quant:
-                        #     if isinstance(exp,int):
-                        #         s+="*({})**({})".format(omitted_unit,exp)
-                        #     else:
-                        #         s+="*({})**({:.9})".format(omitted_unit,exp)
-                        # else:
-                        #     if isinstance(exp,int):
-                        #         s+="*({}**{})".format(omitted_unit,exp)
-                        #     else:
-                        #         s+="*({}**{:.9})".format(omitted_unit,exp)
-            # print("Based on the omitted quantities, a formula between lhs and rhs is found:")
-            # print(s)
-                        
-            if is_pretty:
-                s=self._pretty_sp_expr(s)
-
-            return s
+        ## Check if it is solvable
+        for i,value in enumerate(mask_b):
+            if value and l[i]==False:
+                print("Based on the omitted quantities, no formula between lhs and rhs is found.")
+                return None
+            
+        min_units_array=[]
+        min_idx_list=[]
+        min_A=None
+        
+        min_rtn=search_min_array(([],[]),remained_units=[(i,v) for i,v in enumerate(units_array)],b=b)
+        if min_rtn!=None:
+            min_idx_list, min_units_array = min_rtn
+            min_omit_quant=[]
+            for idx in min_idx_list:
+                min_omit_quant.append(omit_quant[idx])
+            min_A=np.vstack(min_units_array).T
+            # print(min_idx_list, min_units_array)
         else:
-            print("Based on the omitted quantities, no formula between lhs and rhs is found.")
+            min_units_array = units_array
+            min_idx_list = []
+            min_omit_quant = omit_quant
+            min_A=A.T
+        
+
+        if len(min_units_array)<len(units_array):
+            print("Redudant units are found.")
+    
+        x=np.dot(np.linalg.pinv(min_A),b)
+        
+        is_rhs_unit_s=False
+        if rhs == "1":
+            is_rhs_unit_s=True
+            s="{} = ".format(lhs)
+        else:
+            s="{} = {}".format(lhs,rhs)
+
+        is_1st_nonzero=True
+        for i in range(len(min_omit_quant)):
+            omitted_unit = min_omit_quant[i]
+            exp = _keep_sig(x[i])
+            single_word_match=re.match(r"^[a-zA-Z][\w_]*\r?$",omitted_unit)
+
+            if exp == int(exp):
+                exp = int(exp)
+                exp_str = str(exp)
+            else:
+                exp_str = "({:.9})".format(exp)
+
+            if single_word_match or not is_quant:
+                omitted_unit_str = omitted_unit
+            else:
+                omitted_unit_str = "("+omitted_unit+")"
+
+            
+
+            
+            if _equal_to_abs(exp,0):
+                continue
+            elif _equal_to_abs(exp,1):
+                if is_1st_nonzero and is_rhs_unit_s:
+                    is_1st_nonzero=False
+                else:
+                    s+="*"
+                s+="{}".format(omitted_unit)    
+            else:
+                if is_1st_nonzero and is_rhs_unit_s:
+                    is_1st_nonzero=False
+                else:
+                    s+="*"
+                s+="{}**{}".format(omitted_unit_str,exp_str) 
+                
+        # print("Based on the omitted quantities, a formula between lhs and rhs is found:")
+        # print(s)
+                    
+        if is_pretty:
+            s=self._pretty_sp_expr(s)
+
+        return s
+        # else:
+        #     print("Based on the omitted quantities, no formula between lhs and rhs is found.")
+        #     return None
         # else:
         #     common_factor=0
         #     is_linear_independent=False
@@ -1025,7 +1082,7 @@ class Dimchecker():
             r_s = self._pretty_sp_expr(r)
         else:
             l_s = l
-            r_s = l
+            r_s = r
 
         if np.all(self.dimension_array(str(l))==self.dimension_array(str(r))):
             if is_print:
@@ -1417,8 +1474,3 @@ if _DIMCHECK_SI_INSTANCE:
     si=Dimcheck(quant_def_file=_dimcheck_path+os.sep+"si.json",is_save=_DIMCHECK_IS_SAVE, setting_file=_dimcheck_path+os.sep+"setting.json")
 else:
     si=None
-
-if _DIMCHECK_CUSTOM_INSTANCE:
-    cs=Dimcheck(quant_def_file=_dimcheck_path+os.sep+_DIMCHECK_CUSTOM_QUANT_DEF_FILE,is_save=_DIMCHECK_IS_SAVE, setting_file=_dimcheck_path+os.sep+"setting.json")
-else:
-    cs=None

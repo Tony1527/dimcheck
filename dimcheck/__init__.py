@@ -1,8 +1,7 @@
-__all__ = ["Dimcheck", "si","cs"]
-__version__ = ["v0.0.1"]
+__all__ = ["Dimcheck", "si"]
+__version__ = ["1.0.2"]
 
 
 
 
 from .dimcheck_core import si,Dimcheck
-from .dimcheck_core import cs

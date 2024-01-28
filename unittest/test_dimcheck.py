@@ -194,10 +194,16 @@ class TestDimCheckSi(seldom.TestCase):
         try:
             si.is_quant=False
             self.assertEqual(si.formula("[E]",["[v]","[k]","[hbar]"]), "[E] = [v]*[k]*[hbar]")
-            self.assertEqual(si.formula("[E]",["[m]","[l]","[v]"]), "[E] = [m]*[v]**2")
+            self.assertEqual(si.formula("[E]",["[m]","[l]","[v]"]), "[E] = [v]**2*[m]")
             self.assertEqual(si.formula("[r]",["[G*m]","[t]"]), "[r] = [G*m]**(0.333333333)*[t]**(0.666666667)")
             self.assertEqual(si.formula("[t]",["[l]","[g]"]), "[t] = [l]**(0.5)*[g]**(-0.5)")
             self.assertEqual(si.formula("[G]",["[m]","[r]","[F]"]), "[G] = [m]**-2*[r]**2*[F]")
+            self.assertEqual(si.formula("[t]",["[m/t**2]", "[V_l]", "[rho_m]","[g]"]),"[t] = [g]**(-0.5)*[V_l]**(0.166666667)")
+            self.assertEqual(si.formula("[pressure]",["[m]","[n]","[T]","[m l^2 t^-2 T^-1]"]), "[pressure] = [m l^2 t^-2 T^-1]*[T]*[n]")
+            self.assertEqual(si.formula("[pressure]",["[m]","[n]","[m l^2 t^-2]"]), "[pressure] = [m l^2 t^-2]*[n]")
+            self.assertEqual(si.formula("[t]",["[I]","[L]","[C]"]), "[t] = [C]**(0.5)*[L]**(0.5)")
+            self.assertEqual(si.formula("[t]",["[m]","[l]","[I]","[T]","[mole]","[F]","[a]","[Q]"]), "[t] = [Q]*[I]**-1")
+            
         except Exception as e:
             raise e
         finally:
@@ -271,11 +277,15 @@ class TestDimCheckSi(seldom.TestCase):
             self.assertEqual(si.omit_quant("E","k",["hbar","c"]), "E = k*hbar*c")
 
             self.assertEqual(si.formula("E",["v","k","hbar"]), "E = v*k*hbar")
-            self.assertEqual(si.formula("E",["m","l","v"]), "E = m*v**2")
+            self.assertEqual(si.formula("E",["m","l","v"]), "E = v**2*m")
             self.assertEqual(si.formula("r",["G m","t"]), "r = (G m)**(0.333333333)*t**(0.666666667)")
             self.assertEqual(si.formula("t",["l","g"]), "t = l**(0.5)*g**(-0.5)")
             self.assertEqual(si.formula("G",["m","r","F"]), "G = m**-2*r**2*F")
-
+            self.assertEqual(si.formula("t",["m/t**2", "V_l", "rho_m","g"]),"t = g**(-0.5)*V_l**(0.166666667)")
+            self.assertEqual(si.formula("pressure",["m","n","T","m l^2 t^-2 T^-1"]), "pressure = m l^2 t^-2 T^-1*T*n")
+            self.assertEqual(si.formula("pressure",["m","n","m l^2 t^-2"]), "pressure = m l^2 t^-2*n")
+            self.assertEqual(si.formula("t",["I","L","C"]), "t = C**(0.5)*L**(0.5)")
+            self.assertEqual(si.formula("t",["m","l","I","T","mole","F","a","Q"]), "t = Q*I**-1")
 
             si.is_pretty=True
             self.assertEqual(si.unit("l"), "m")

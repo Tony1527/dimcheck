@@ -9,7 +9,7 @@
   - [Advanced Usage](#advanced-usage)
     - [Pretty printing](#pretty-printing)
     - [Quantity Mode: Simpler format for inputting quantities](#quantity-mode-simpler-format-for-inputting-quantities)
-    - [Custom definition of the quantities](#custom-definition-of-the-quantities)
+    - [Customized definition of the quantities](#customized-definition-of-the-quantities)
     - [Serialization](#serialization)
     - [Save and display all quantities or expressions](#save-and-display-all-quantities-or-expressions)
   - [Methods](#methods)
@@ -148,7 +148,7 @@ After that all quantities can be simply write as
 >>> si.unit("m v^2")
 'kg*m**2/s**2'
 ```
-The reason we introduce the square brackets is to distinguish quantities and base units. Since `[m]` represents the mass as the a quantity, `m` represents the base unit of length. So, if you only want to focus on the operation between quantities, and won't involve the base units in the formula, then we recommend you use the quantity mode as it is more convenient to write. Even though, the quantity mode work in the terminal, it is still required to wrap quantities when defining other quantities in the `Custom definition of the quantities` section.
+The reason we introduce the square brackets is to distinguish quantities and base units. Since `[m]` represents the mass as the a quantity, `m` represents the base unit of length. So, if you only want to focus on the operation between quantities, and won't involve the base units in the formula, then we recommend you use the quantity mode as it is more convenient to write. Even though, the quantity mode work in the terminal, it is still required to wrap quantities when defining other quantities in the `Customized definition of the quantities` section.
 
 ## Advanced Usage
 
@@ -191,8 +191,8 @@ True
 ```
 
 
-### Custom definition of the quantities
-In `dimcheck`, you can define your own quantities and symbols by simply manipulate the `setting.json` file in the package directory. Here are steps to define your own unit system.
+### Customized definition of the quantities
+In `dimcheck`, you can define your own quantities and symbols by simply manipulate the `si.json` file in the package directory. Here are some steps to define your own unit system.
 
 1. Find the position of the package:
 ```python
@@ -200,24 +200,12 @@ In `dimcheck`, you can define your own quantities and symbols by simply manipula
 Starting to parse the quantity definition file: 
 /to/your/pip/lib/path/packages/dimcheck/si.json
 Successfully parsed!
->>> si.setting_file
-'/to/your/pip/lib/path/packages/dimcheck/setting.json'
+
+>>> si.quant_def_file
+'/to/your/pip/lib/path/packages/dimcheck/si.json'
 ```
 
-2. Copy the following setting to the `setting.json`. The `is_save` field is used to serialize the object.
-```json
-{
-    "si_instance": true,
-    "custom_instance": true,
-    "custom_quant_def_file": "my_definition.json",
-    "is_save": true,
-    "output": "./"
-}
-```
-
-3. Rename the file `'/to/your/pip/lib/path/packages/dimcheck/custom.json'` to `'/to/your/pip/lib/path/packages/dimcheck/my_definition.json'`
-
-4. Add, delete or change the definition of symbols in the file. You need to be careful since the quantities should always be wrapped with a pair of square bracket `[]`. In the following example, the quantity `[epsilon_0]` is defined by the rhs `[Q]**2/([F]*[l]**2)`. Meanwhile, you can also give multiple aliases to the same quantity. Discription can be used to indicate the meaning of the quantity.
+2. Add, delete or change the definition of symbols in the file. You need to be careful since the quantities should always be wrapped with a pair of square bracket `[]`. In the following example, the quantity `[epsilon_0]` is defined by the rhs `[Q]**2/([F]*[l]**2)`. Meanwhile, you can also give multiple aliases to the same quantity. Discription can be used to indicate the meaning of the quantity.
 ```json
 {
     "quantity":"[epsilon_0]",
@@ -227,21 +215,22 @@ Successfully parsed!
 }
 ```
 
-5. After doing so, you can then import your definition by simply invoking
+3. After doing so, you can then import your definition by simply invoking
 ```python
-# Import custom quantity definition. Here "cs" means custom
->>> from dimcheck import cs
+# Import customized quantity definition.
+>>> from dimcheck import si
 Starting to parse the quantity definition file: 
-/to/your/pip/lib/path/packages/dimcheck/custom.json
+/to/your/pip/lib/path/packages/dimcheck/si.json
 Successfully parsed!
 
 # Test your definition.
->>> cs.unit("m v**2")
+>>> si.unit("m v**2")
 'kg*m**2/s**2'
->>> cs.quant("m v**2")
+>>> si.quant("m v**2")
 'E'
 ```
 
+In case, the `si.json` is modified, there is another copy of `si.json` at `data/si.json` in the repository.
 
 ### Serialization
 Since sometimes loading `"si.json"` can be time-consuming, `dimcheck` provides the serialization to directly save the `Dimcheck` object (like `si`).
